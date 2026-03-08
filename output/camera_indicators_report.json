@@ -1,0 +1,51 @@
+{
+  "profile_metadata": {
+    "name": "Experimental Camera Profile",
+    "issuer": "JPEG Trust Committee",
+    "date": "2025-07-05T10:20:25.844Z",
+    "version": "2.0.0",
+    "language": "en"
+  },
+  "statements": [
+    [
+      {
+        "id": "metadata-output",
+        "report_text": "This is a sample camera profile for testing purposes - 1234567890"
+      }
+    ],
+    [
+      {
+        "id": "generalInfo",
+        "title": "General Information",
+        "report_text": "This section provides information about general stuff"
+      },
+      {
+        "id": "content",
+        "value": true,
+        "report_text": "This content has not been modified"
+      },
+      {
+        "id": "declaration_only",
+        "value": true,
+        "report_text": "No modifications took place after it was created"
+      }
+    ],
+    [
+      {
+        "id": "location",
+        "title": "Location Information",
+        "report_text": "This section provides information about where the image was taken"
+      },
+      {
+        "id": "gps",
+        "value": true,
+        "report_text": "The GPS information shows that the image was taken inside of China"
+      },
+      {
+        "id": "city",
+        "value": true,
+        "report_text": "The city is in China"
+      }
+    ]
+  ]
+}

@@ -1,0 +1,413 @@
+= Asset Profiles
+
+== Description
+
+An asset profile is used to evaluate the crJSON produced from the Content Credential of a given asset. The asset profile is expressed via https://yaml.org/spec/1.2.2/[YAML] file consisting of a series of YAML documents. It contains a block of information about the asset profile, a set of statements that are evaluated against the crJSON, and may also contain data blocks of additional information. Each statement has an expression, which is expressed as https://opensource.adobe.com/json-formula/[json-formula] that is evaluated against the crJSON and produces a single output value. Each data block enables using templates and expressions to provide additional context or information. 
+
+NOTE: Other serialisations, whether ephemeral or persistent, are possible, but are not specified in this document.
+
+== Serialisation
+
+=== Introduction
+
+==== General
+An asset profile shall be expressed as a series of YAML documents, where the first document shall be the <<information_block, information block>> that contains metadata about the asset profile. Any subsequent documents contain a series of <<statements, statements>>, <<data_blocks, data blocks>> or both. These statements and data blocks define the expressions to be evaluated against the crJSON produced from a Content Credential. Each statement contains information that will be output into the produced report, such as a description of the statement, the expression to be evaluated, and the text to be included in the report. Each data block enables using templates and expressions to provide additional context or information to be output into the report.
+
+NOTE: A YAML document is a section of a YAML file that is separated from the next section by a YAML document separator, which is a line containing three dashes (`---`). The first document in a YAML file is the one between the first and second separators.
+
+[[expressions]]
+==== Expressions
+
+Expressions are strings of https://opensource.adobe.com/json-formula/[json-formula], an expression grammar that operates on JSON documents. In the context of asset profiles, expressions are used to evaluate crJSON. As such, they evaluate the provided crJSON as input and produce a single value as an output. The output value can be binary, numeric (floating point), textual (string), a structured object (such as an array or object), or a URI reference which can be internal (JUMBF reference) or external (URL).
+
+For example, the simple expression `manifests[0].status.content == "assertion.dataHash.match"` could be used to determine if the content status of the active manifest matches the expected value of `assertion.dataHash.match`. The output of this expression would be a boolean value indicating whether the condition is true or false.
+
+
+==== Multilingual text
+
+When a field is expressed in multiple languages, these multilingual fields use a mapping with <<BCP47>> language tags as key and the text in the corresponding language as value as in <<example_multilingual_fields>>. These types are indicated as `ML Dict`.
+
+[[example_multilingual_fields]]
+.Example of multilingual fields
+[source,yaml]
+----
+field_name:
+  en: Text in English.
+  es: Text in Spanish.
+  fr: Text in French.
+----
+
+[[templates]]
+=== Templates
+
+Many aspects of a asset profile can contain template values that are replaced with the actual values when the report is generated. The template values are enclosed in double curly braces (`++{{++` and `++}}++`) and can refer to the output value of the statement, the metadata of the asset profile, or other variables defined in the asset profile. For example, `++{{id}}++` refers to the result of an expression statement with that `id`, and `++{{profile_metadata.name}}++` refers to the `name` field of the `profile_metadata` mapping from the information block.
+
+<<example_use_of_templates>> illustrates the use of templates in a asset profile.
+
+[[example_use_of_templates]]
+.Examples of using templates
+[source,yaml]
+----
+report_text:
+"true":
+	en: This media asset is compliant with '({{profile_metadata.name}}, {{profile_metadata.version}})'.
+
+- block:
+    name: "test_map"
+    value:
+      alg: "{{ asset_info.alg }}"
+      hash: "{{ asset_info.hash }}"
+----
+
+A template value can also be a full blown <<expressions, expression>>, which allows for not just simple value replacement but also more complex evaluations. These template expressions look similar to standard templates, in that they are enclosed in double curly braces (`++{{++` and `++}}++`), but immediately following the opening curly brace is the keyword `expr`, followed by the expression to be evaluated (enclosed in double quotes) and then the closing brace. For example, the template `++{{expr "_dateOfWeek()"}}++` would call the expression `_dateOfWeek()` defined in the information block and replace the template with the result of that expression. 
+
+The other common use for template expressions is to be able to refer to fields and values in the crJSON, such as `++{{expr "manifests[0].signature.issuer.CN"}}++`, which would return the CN (Common Name) from the signature on the active Trust Manifest.
+
+NOTE: By combining global expressions with template expressions, it is possible to create complex reports that adapt to the context of the media asset and the asset profile.
+
+[[information_block]]
+=== Information block
+
+[[profile_metadata]]
+==== Metadata
+The asset profile information block, which shall be the first document in the YAML file, shall consist of a YAML mapping that provides additional information about the specific asset profile. It shall contain at least one mapping with the key `profile_metadata`, which shall only contain the keys listed in <<table_profile_metadata>>, such as its name and date of issue. Some of the keys are mandatory and therefore shall always be present. Its function is to provide a structured way to include metadata about the asset profile. 
+
+The information block may also contain additional mappings that provide further context or configuration for the asset profile, as described in <<custom_information>>.  Additional mappings may either be defined by this document or may be custom to a specific use case.
+
+// 4 columns, 2nd one 3x width of the other three 
+[[table_profile_metadata]]
+.asset profile metadata
+[cols="1,3,1,1", options="header"]
+|===
+|Key
+|Value
+|Type
+|Mandatory
+
+|name
+|Name of the asset profile.
+|`String`
+|yes
+
+|issuer
+|Name of the issuer of the asset profile.
+|`String`
+|yes
+
+|date
+|Date when the asset profile was issued.
+|date (as defined in <<ISO8601>>)
+|yes
+
+|version
+|Version number of the asset profile.
+|`String` (formatted as per <<SEMVER>>)
+|yes
+
+|language
+|Default of the text in the asset profile for non multilingual fields.
+|<<BCP47>> language tag
+|no
+
+|===
+
+A simple example of the metadata mapping is shown in <<example_use_of_metadata>>.
+
+[[example_use_of_metadata]]
+.Example of metadata in a asset profile
+[source,yaml]
+----
+profile_metadata:
+  name: Testing Profile
+  issuer: Someone
+  date: 2025-06-17T22:44:49.717Z
+  version: 2.0.0
+  language: en
+----
+
+[[custom_information]]
+==== Custom information
+
+Additional mappings may be added to the information block to provide further context or configuration for the asset profile or to provide values for use in expressions. These mappings are not defined by this document and may vary depending on the use case. The keys for these mappings shall be unique within the asset profile, and shall use appropriate namespacing syntax. Some examples of custom information are shown in <<example_custom_information>>.
+
+[[example_custom_information]]
+.Example of custom information in a asset profile
+[source,yaml]
+----
+"foo:info":
+  description: This is a sample camera profile for testing purposes
+  magic_number:  1234567890
+
+"my:example":
+  description: "This is a test example"
+  myDate: "{{ profile_metadata.date }}"
+  myNumber: |
+    {{ expr "5*5"}}
+----
+
+==== Use in templates and expressions
+
+All of the mappings present in the information block are made available to the templates and expressions in the asset profile. For example, it is possible to use the metadata in templates to provide context for the evaluation of the crJSON.
+
+It is strongly recommended that an asset profile output the entire `profile_metadata` mapping into a data block in the report, also named `profile_metadata` using a data block as shown in <<example_output_metadata_in_data_block>>.
+
+[[example_output_metadata_in_data_block]]
+.Example of outputting the metadata in a data block
+[source,yaml]
+----
+# Output the metadata
+- block:
+    name: "profile_metadata"
+    value: |
+      {{ expr "@.profile_metadata" }}
+----
+
+To output a custom mapping, such as `my:Example` from the information block via a data block, the following expression statement in <<example_output_custom_mapping_in_data_block>> could be used.
+
+[[example_output_custom_mapping_in_data_block]]
+.Example of outputting a custom mapping in a data block
+[source,yaml]
+----
+- block:
+    name: "myExample"
+    value: |
+      {{expr "@.'my:Example'"}}
+----
+
+==== Globals
+
+===== General
+
+In order to provide a common context for the evaluation of the expressions in the asset profile, the information block may contain a `variables` mapping as well as an `expressions` mapping.
+
+===== Variables
+
+The `variables` mapping contains key-value pairs that define variables that can be used in the expressions in the asset profile. The keys for these variables shall all begin with a `$` and shall be unique within the asset profile. The values of the variables can be any valid JSON value, including strings, numbers, booleans, arrays, and objects. Some examples of variables are shown in <<example_variables>>.
+
+[[example_variables]]
+.Example of variables in the asset profile
+[source,yaml]
+----
+variables:
+	"$creation_date": "2023-10-01T12:00:00Z"
+	"$creator": "John Doe"
+	"$days": [ "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday" ]
+----
+
+===== Expressions
+
+The `expressions` mapping contains key-value pairs that define expressions that can be used in the asset profile. The keys for these expressions shall all begin with a `_` and be unique within the asset profile. The values of the expressions are strings that follow the https://opensource.adobe.com/json-formula/[json-formula] grammar. Some examples of expressions are shown in <<example_expressions>>.
+
+[[example_expressions]]
+.Example of expressions in the asset profile
+[source,yaml]
+----
+expressions:
+	_isUnmodified: '@.manifests[0].status.content == "assertion.dataHash.match"'
+	_isAIGC: contains(@.manifests[0].assertions.'c2pa.actions'.actions[0].digitalSourceType, "trainedAlgorithmicMedia")
+	_dateOfWeek: "value($days, weekday(now(), 3))"
+----
+
+==== Includes
+
+An asset profile may include other asset profiles snippets using the `include` directive. This allows for modular asset profiles that can be reused across different use cases. The `include` directive is specified as shown in <<example_include_asset_profile_snippet>>.
+
+[[example_include_asset_profile_snippet]]
+.Example of including a asset profile snippet
+[source,yaml]
+----
+include:
+	- path/to/other/asset_profile.yml[]
+----
+
+Each entry in the array is a path (either absolute or relative) to a YAML file containing the asset profile snippet. The first document in the YAML, the <<information_block, information block>>, will be appended to the first document in the including profile - this enables having standard and custom metadata values, variables and expressions included. If there is any naming conflict, the values from the current (including) asset profile will take precedence over anything being included. If two included files use the same identifier for a variable or expression, the value from the last included profile will be used.
+
+Each subsequent document in the YAML will be appended to the including asset profile, in the order they appear in the list of includes.
+
+[[data_blocks]]
+=== Data Blocks
+
+A asset profile may contain one or more data blocks, in any YAML document except the first, which are used to extract additional information from the crJSON or other sources. 
+
+NOTE: By allowing them to appear anywhere in the asset profile, data blocks can refer to the results of any expression statement that precedes it.
+
+Each data block is represented as a mapping with the key `block` and contains a pair of required key-value pairs:
+
+`name`:: a field which will be the name of the mapping in the report,
+`value`:: a field that can be of any valid YAML types (e.g., scalers, arrays or mappings) and can contain <<templates, template values>> that are replaced with the actual values when the report is generated.
+
+For example, the data block in <<example_data_block_in_profile>> extracts the algorithm and hash from the `asset_info` Trust Indicator in the crJSON into a data block named `asset_info` as seen in the report in <<example_output_data_block_in_report>>.
+
+[[example_data_block_in_profile]]
+[source,yaml]
+.Example of a data block in a profile
+----
+- block:
+	name: "asset_info"
+	value:
+		alg: "{{ asset_info.alg }}"
+		hash: "{{ asset_info.hash }}"
+----
+
+[[example_output_data_block_in_report]]
+[source,yaml]
+.Example output of that data block in the report
+----
+asset_info:
+  alg: sha256
+  hash: na6lb3F/uIdiAhZtZp4Oa2aNCj1UvcHVxx/p5ISE2AA=
+  myNumber: 100
+----
+
+An example data block that extracts the set of assertion statuses from the active Trust Record (manifest) in the Trust Indicator Set into a data block named `assertion_status` in the report could look like <<example_data_block_in_profile_with_assertion_status>>, with the output in the report as shown in <<example_output_data_block_in_report_with_assertion_status>>.
+
+[[example_data_block_in_profile_with_assertion_status]]
+[source,yaml]
+.Example of a data block in a profile
+----
+- block:
+	name: "assertion_status"
+	value: |
+		{{ expr "manifests[0].'claim.v2'.assertion_status" }}
+----
+
+[[example_output_data_block_in_report_with_assertion_status]]
+[source,yaml]
+.Example output of that data block in the report
+----
+assertion_status:
+  c2pa.hash.data: assertion.hashedURI.match
+  c2pa.actions.v2: assertion.hashedURI.match
+----
+
+[[statements]]
+=== Statements
+
+==== General
+Following the information block document is one or more documents known as a statement section (or just section for short). Each section contains a list of statements, where each statement is represented as mappings with predefined fields. 
+
+There are two types of statements that can be present, in any order or combination, in a section: information statements and expression statements. Information statements are used to provide additional context or information about the section, while expression statements are used to evaluate expressions against the crJSON.  Both types of statements provide a way to include human-readable report text that will be included in the associated report.
+
+==== Statement identifiers
+
+===== General
+One of the fields that shall be present in all statements is the statement identifier (`id`). It shall have a value which can be any valid JSON identifier. If the identifier begins with the prefix `c2pa:`, then it represents one of the predefined identifiers described in <<statement_ids>>. 
+
+The identifier shall be unique within the asset profile, as it can be used in an expression to refer to the result of the evaluation of the statement. <<example_use_of_statement_id>> shows an example of how to use the identifier in an expression.
+
+[[example_use_of_statement_id]]
+.Example of using a statement identifier in an expression
+[source,yaml]
+----
+id: c2pa:profile_compliance
+description: is the asset compliant with this profile?
+expression: @.profile.aigc && @.profile.declaration_only
+report_text:
+"true":
+	en: |
+		Compliance Status: {{profile.c2pa:profile_compliance}}
+"false":
+	en: This media asset is not compliant with this profile.
+----
+
+NOTE: <<example_use_of_statement_id>> is interesting because it is self-referential, where the template being evaluated as part of the `report_text` references the result of the statement's expression.
+
+[[statement_ids]]
+===== Predefined statement IDs
+
+This document defines some reserved statement identifiers that are used to signal that an expression statement is serving a particular purpose. <<table_predefined_statement_ids>> gives an overview of these predefined IDs and a description of their purpose. 
+
+[[table_predefined_statement_ids]]
+.Predefined statement IDs
+[cols="2,3,1,1", options="header"]
+|===
+|ID
+|Purpose
+|Type
+|Mandatory
+
+|c2pa:profile_compliance
+|Expression that produces a binary output that signals the overall compliance of a media asset with this asset profile.
+|`Boolean`
+|no
+
+|===
+
+==== Use of Templates
+
+The text in the report that is generated by a statement, as specified in the `report_text` field of a statement, can contain <<templates, template values>> that are replaced with the actual values when the report is generated. 
+
+==== Information statements
+
+An information statement is used to provide some explicit text at a specific point in the report, without the need to evaluate any expression. The most common use for one is to provide a title and description of each section, which is why there should be an information statement as the first statement in any section. <<table_information_statements>> gives an overview of the structure of an information statements. 
+
+[[table_information_statements]]
+.Structure of information statements
+[cols="1,3,1,1", options="header"]
+|===
+|Key
+|Value
+|Type
+|Mandatory
+
+|id
+|Identifier that uniquely identifies the statement within the asset profile.
+|`String ([a-zA-Z0-9_.-]*)` 
+|yes
+
+|description
+|A human readable description of the statement or section that will not be taken over in associated reports.
+|`String`
+|no
+
+|title
+|Section title that will be copied in the reports, if present.
+|`String` \| `ML Dict`
+|no
+
+|report_text
+|Text that is copied in the reports, providing additional context or information.
+|`String` \| `ML Dict`
+|yes
+
+|===
+
+==== Expression statements
+
+An expression statement is used to evaluate an expression against the crJSON and produce a value that can be included in the associated report. Each expression statement shall have an identifier (`id`), an expression to be evaluated, and the text to be included in the report. The output value of the expression shall also be included in the report, and also recorded back into the crJSON with the same identifier as the statement, as part of the `profile` section of the crJSON.  For example, if the identifier of the expression statement is `isAIGC`, then the output value of the expression can be referenced in a future expression via `@.profile.isAIGC`.
+
+NOTE: If an expression cannot be evaluated, the output value of the expression is `null` (as per https://opensource.adobe.com/json-formula/[json-formula]).
+
+<<table_expression_statements>> gives an overview of the structure of expression statements.
+
+[[table_expression_statements]]
+.Structure of expression statements
+[cols="1,3,1,1", options="header"]
+|===
+|Key
+|Value
+|Type
+|Mandatory
+
+|id
+|Identifier that uniquely identifies the statement within the asset profile.
+|`String ([a-zA-Z0-9_.-]*)`
+|yes
+
+|description
+|A human readable description of the statement that will not be taken over in associated reports.
+|`String` \| `ML Dict`
+|no
+
+|expression
+|Expression/formula to be evaluated against the Trust Indicator Set.
+|String (https://opensource.adobe.com/json-formula/[json-formula])
+|yes
+
+|report_text
+|Text that goes in the associated report to explain the output value of this statement to an end user.
+|`String` \| `ML Dict`
+|yes
+
+|===
+

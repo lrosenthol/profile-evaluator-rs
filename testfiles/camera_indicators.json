@@ -1,0 +1,102 @@
+{
+  "@context": [
+    "https://jpeg.org/jpegtrust/"
+  ],
+  "declaration": {
+    "claim.v2": {
+      "alg": "sha256",
+      "claim_generator_info": [
+        {
+          "name": "Joe's Camera App"
+        }
+      ],
+      "signature": "self#jumbf=c2pa/urn:c2pa:e8ea7712-2bc8-4ca0-848d-67b19434913f/c2pa.signature",
+      "dc:format": "image/jpeg",
+      "signature_status": "claimSignature.validated",
+      "assertion_status": {
+        "c2pa.hash.data": "assertion.hashedURI.match",
+        "c2pa.actions": "assertion.hashedURI.match"
+      }
+    },
+    "assertions": {
+      "c2pa.hash.data": {
+        "alg": "sha256",
+        "pad": "",
+        "hash": "Auxjtmax46cC2N3Y9aFmBO9Jfay8LEwJWzBUtZ0sUM8gA=",
+        "name": "JUMBF manifest",
+        "exclusions": [
+          {
+            "start": 9960,
+            "length": 4213
+          }
+        ]
+      },
+      "c2pa.actions.v2": {
+        "actions": [
+          {
+            "action": "c2pa.created",
+            "when": "2023-02-11T09:00:00Z",
+            "softwareAgent": {
+              "name": "Joe's Camera App"
+            },
+            "digitalSourceType": "https://cv.iptc.org/newscodes/digitalsourcetype/digitalCapture"
+          }
+        ]
+      }
+    }
+  },
+  "manifests": [
+    {
+      "claim.v2": {
+        "alg": "sha256",
+        "claim_generator_info": [
+          {
+            "name": "Joe's Camera App"
+          }
+        ],
+        "signature": "self#jumbf=c2pa/urn:c2pa:e8ea7712-2bc8-4ca0-848d-67b19434913f/c2pa.signature",
+        "dc:format": "image/jpeg",
+        "signature_status": "claimSignature.validated",
+        "assertion_status": {
+          "cawg.metadata": "assertion.hashedURI.match",
+          "c2pa.hash.data": "assertion.hashedURI.match"
+        },
+        "content_status": "assertion.dataHash.match"
+      },
+      "assertions": {
+        "cawg.metadata": {
+          "@context": {
+            "dc": "http://purl.org/dc/elements/1.1/",
+            "exif": "http://ns.adobe.com/exif/1.0/",
+            "Iptc4xmpExt": "http://iptc.org/std/Iptc4xmpExt/2008-02-29/"
+          },
+          "exif:GPSVersionID": "2.2.0.0",
+          "exif:GPSLatitude": "39.918522630419034",
+          "exif:GPSLongitude": "116.39726729279847",
+          "exif:GPSAltitudeRef": 0,
+          "exif:GPSAltitude": "100963/29890",
+          "exif:GPSTimeStamp": "2019-09-22T18:22:57Z",
+          "exif:GPSSpeedRef": "K",
+          "exif:GPSSpeed": "4009/161323",
+          "exif:GPSImgDirectionRef": "T",
+          "exif:GPSImgDirection": "296140/911",
+          "exif:GPSDestBearingRef": "T",
+          "exif:GPSDestBearing": "296140/911",
+          "exif:GPSHPositioningError": "13244/2207",
+          "exif:ExposureTime": "1/100",
+          "exif:FNumber": 4.0,
+          "exif:ColorSpace": 1,
+          "exif:DigitalZoomRatio": 2.0,
+          "photoshop:DateCreated": "Aug 31, 2022",
+          "dc:creator": [
+            "Julie Smith"
+          ],
+          "Iptc4xmpExt:LocationCreated": {
+            "Iptc4xmpExt:City": "Beijing, China"
+          }
+        }
+      }
+    }
+  ],
+  "content": {}
+}

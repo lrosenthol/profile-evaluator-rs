@@ -1,0 +1,31 @@
+# Example Trust Profile for testing handlebars/template rendering
+---
+profile_metadata:
+  name: Testing Profile
+  issuer: JPEG Trust Committee
+  date: 2025-06-17T22:44:49.717Z
+  version: 2.0.0
+  language: en
+
+include:
+  - includeMe.yml
+---
+# Section 0 - Output the metadata
+- block:
+    name: "profile_metadata"
+    value: |
+      {{ expr "@.profile_metadata" }}
+---
+# Section 1
+
+- id: generalInfo
+  description: Section 1 - General Information
+  title: General Information
+  report_text: This section provides information about general stuff
+
+---
+# Section 1 - Metadata Output
+
+- id: metadata-output
+  description: Section 0 - Metadata Output
+  report_text: "{{foo:sample.description}} - {{foo:sample.number}}"

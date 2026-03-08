@@ -1,0 +1,96 @@
+# Example Trust Profile for evaluating no_manifests_credential.json
+---
+profile_metadata:
+  name: Experimental Signature Validation Profile
+  issuer: JPEG Trust Committee
+  date: 2023-09-28T13:19:36.705Z
+  version: 2.0.0
+  language: en
+---
+# Section 0 - Output the metadata
+- block:
+    name: "profile_metadata"
+    value: |
+      {{ expr "@.profile_metadata" }}
+---
+# Section 1
+
+- id: section1
+  description: Section 1 - Date checks
+  title: Validity checking based on dates
+  report_text: This section checks the validity dates
+
+- # check for `not_before`
+  id: not_before
+  description: check the current date is after `not_before`
+  expression: toDate(manifests[0].claim_signature.validity.not_before) < now()
+  report_text:
+    "true":
+      en: The `not_before` date is prior to right now
+      fr: Translation in French
+      zh: Translation in Simplified Chinese
+    "false":
+      en: The certificate is not yet valid
+
+- # check for `not_after`
+  id: not_after
+  description: check the current date is before `not_after`
+  expression: toDate(manifests[0].claim_signature.validity.not_after) > now()
+  report_text:
+    "true":
+      en: The `not_after` date is after right now
+    "false":
+      en: The certificate is no longer valid
+      fr: Translation in French
+      zh: Translation in Simplified Chinese
+
+---
+# Section 2
+
+- id: section2
+  description: Section 2 - Check the CA/issuer
+  title: Make sure the issuer is on our Trust List
+  report_text: This section checks for valid issuers
+
+- # check the issuer against a known TEST cert
+  id: test_cert
+  description: see if this was signed by a test certificate
+  expression: >
+    manifests[0].claim_signature.issuer.OU="FOR TESTING_ONLY" || 
+    manifests[0].claim_signature.issuer.O="C2PA Test Intermediate Root CA"
+  report_text:
+    "true":
+      en: The issuer is a test certificate
+      fr: Translation in French
+      zh: Translation in Simplified Chinese
+    "false":
+      en: The issuer is not trusted
+
+- # check the issuer against known ones
+  id: issuer
+  description: see if the issuer is on our trust list
+  expression: >
+    (manifests[0].claim_signature.issuer.CN="Alice's Trust Services" && manifests[0].claim_signature.issuer.C="US") 
+    || (manifests[0].claim_signature.issuer.CN="ЦСК НБУ" && manifests[0].claim_signature.issuer.C="UA")
+  report_text:
+    "true":
+      en: The issuer ({{expr "manifests[0].claim_signature.issuer.CN"}}) is trusted
+      fr: Translation in French
+      zh: Translation in Simplified Chinese
+    "false":
+      en: The issuer ({{expr "manifests[0].claim_signature.issuer.CN"}}) is not trusted
+
+---
+# Section 3 - Compliance
+
+- # check compliance
+  id: jpt:profile_compliance
+  description: is the asset signed with a trusted certificate?
+  expression: >
+    @.profile.not_before && @.profile.not_after &&
+    !@.profile.test_cert && @.profile.issuer
+  report_text:
+    "true":
+      en: This media asset is signed with a trusted certificate.
+    "false":
+      en: This media asset is not signed with a trusted certificate.

@@ -1,0 +1,44 @@
+# Example Trust Profile for evaluating no_manifests_credential.json
+---
+profile_metadata:
+  name: Experimental No Manifests Profile
+  issuer: JPEG Trust Committee
+  date: 2023-11-02T01:03:16.443Z
+  version: 2.0.0
+  language: en
+---
+# Section 0 - Output the metadata
+- block:
+    name: "profile_metadata"
+    value: |
+      {{ expr "@.profile_metadata" }}
+---
+# Section 1
+
+- id: generalInfo
+  description: Section 1 - General Information
+  title: General Information
+  report_text: This section provides information about general stuff
+
+- # check for manifests
+  id: manifests
+  description: does the asset contain any manifests
+  expression: hasProperty(@, "manifest") || hasProperty(@, "declaration")
+  report_text:
+    "true":
+      en: This media asset has one or more Trust Manifests
+      de: Translation in German
+      zh: Translation in Simplified Chinese
+    "false":
+      en: No Trust Manifests found in this media asset
+
+- # check compliance
+  id: jpt:profile_compliance
+  description: is the asset compliant with this profile?
+  expression: >
+    @.profile.manifests
+  report_text:
+    "true":
+      en: This media asset is compliant with this profile.
+    "false":
+      en: This media asset is not compliant with this profile.

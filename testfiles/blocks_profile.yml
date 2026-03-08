@@ -1,0 +1,113 @@
+# Example Trust Profile for testing handlebars/template rendering
+---
+profile_metadata:
+  name: Testing Profile
+  issuer: JPEG Trust Committee
+  date: 2025-06-17T22:44:49.717Z
+  version: 2.0.0
+  language: en
+
+my:Example:
+  description: "This is a test example"
+  myDate: "{{ profile_metadata.date }}"
+  myNumber: |
+    {{ expr "5*5"}}
+
+expressions:
+  _hashStatus: if(manifests[0].claim.content_status=="assertion.dataHash.mismatch", "Mismatch", "Match")
+
+---
+# Output the metadata
+- block:
+    name: "profile_metadata"
+    value: |
+      {{ expr "@.profile_metadata" }}
+---
+# Section 1: test blocks
+
+- block:
+    name: "test_map"
+    value:
+      alg: "{{ asset_info.alg }}"
+      hash: "{{ asset_info.hash }}"
+      noTemplate: true
+
+- block:
+    name: "test_array"
+    value:
+      - "{{ asset_info.alg }}"
+      - "{{ asset_info.hash }}"
+      - 123456
+
+- block:
+    name: "test_scaler"
+    value: |
+      {{ expr "2*2" }}
+
+- block:
+    name: "test_array_return"
+    value: |
+      {{ expr "manifests[0].assertions.'c2pa.hash.data'.exclusions" }}
+
+- block:
+    name: "test_map_return"
+    value: |
+      {{ expr "manifests[0].claim.assertion_status" }}
+
+---
+# Section 2: test statements
+
+- id: non-scalers
+  description: object
+  report_text: Object - {{expr "asset_info"}}
+
+- id: non-scalers
+  description: array
+  report_text: Array - {{expr "manifests[0].assertions.'c2pa.hash.data'.exclusions"}}
+
+- id: missing helper
+  description: missing
+  report_text: Foo - '{{foo}}'
+
+- id: test_expression
+  description: test conditional expression
+  expression: 5*5
+  report_text: something goes here...
+
+---
+# Section 3: mixed blocks and statements
+
+- id: test_conditional_expression
+  description: Does the data hash match?
+  report_text: Status -  {{ expr "_hashStatus()" }}
+
+- block:
+    name: "test_expression"
+    value: |
+      {{ expr "@.profile.test_expression" }}
+
+- block:
+    name: "asset_info"
+    value:
+      alg: "{{ asset_info.alg }}"
+      hash: "{{ asset_info.hash }}"
+      myNumber: 100
+
+- block:
+    name: "asset_info_2"
+    value:
+      alg: |
+        {{ expr "@.asset_info.alg" }}
+      hash: |
+        {{ expr "@.asset_info.hash" }}
+      myNumber: |
+        {{ expr "@.profile.asset_info.myNumber" }}
+
+- id: reputation
+  description: Sabrina's section
+  report_text: Reputation - {{ expr "sabrinas_section.reputation" }}
+
+- block:
+    name: "myExample"
+    value: |
+      {{expr "@.'my:Example'"}}

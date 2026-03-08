@@ -1,0 +1,52 @@
+{
+  "profile_metadata": {
+    "name": "Experimental Generative AI Profile",
+    "issuer": "JPEG Trust Committee",
+    "date": "2023-10-31T00:16:40.346Z",
+    "version": "2.0.0",
+    "language": "en"
+  },
+  "statements": [
+    [
+      {
+        "id": "generalInfo",
+        "title": "General Information",
+        "report_text": "This section provides information about general stuff"
+      },
+      {
+        "id": "content",
+        "value": true,
+        "report_text": "This content has not been modified"
+      }
+    ],
+    [
+      {
+        "id": "genAI",
+        "title": "Generative AI Usage",
+        "report_text": "This section provides information about whether or not the media asset was produced by generative AI."
+      },
+      {
+        "id": "aigc",
+        "value": true,
+        "report_text": "This media asset was produced by generative AI"
+      },
+      {
+        "id": "declaration_only",
+        "value": true,
+        "report_text": "No modifications took place after it was created"
+      }
+    ],
+    [
+      {
+        "id": "compliance",
+        "title": "Compliance",
+        "report_text": "This section provides the compliance status of the media asset with respect to this profile."
+      },
+      {
+        "id": "jpt:profile_compliance",
+        "value": true,
+        "report_text": "Compliance Status: true\n"
+      }
+    ]
+  ]
+}

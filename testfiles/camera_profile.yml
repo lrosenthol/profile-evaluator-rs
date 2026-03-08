@@ -1,0 +1,98 @@
+# Example Trust Profile for evaluating camera_credential.json
+---
+profile_metadata:
+  name: Experimental Camera Profile
+  issuer: JPEG Trust Committee
+  date: 2025-07-05T10:20:25.844Z
+  version: 2.0.0
+  language: en
+
+"foo:sample":
+  description: This is a sample camera profile for testing purposes
+  number: 1234567890
+
+---
+# Section 0 - Metadata Output
+
+# Output the metadata
+- block:
+    name: "profile_metadata"
+    value: |
+      {{ expr "@.profile_metadata" }}
+
+- id: metadata-output
+  description: Section 0 - Metadata Output
+  report_text: "{{foo:sample.description}} - {{foo:sample.number}}"
+
+---
+# Section 1
+
+- id: generalInfo
+  description: Section 1 - General Information
+  title: General Information
+  report_text: This section provides information about general stuff
+
+- # check for content modification
+  # description provides additional context that does not go into the report
+  id: content
+  description: content is unmodified
+  expression: >
+    manifests[0].'claim.v2'.content_status == "assertion.dataHash.match"
+  report_text:
+    "true":
+      en: This content has not been modified
+      es: Translation in Spanish
+      zh: Translation in Simplified Chinese
+    "false":
+      en: This content has been modified
+
+- # See if the asset has been modified after creation
+  id: declaration_only
+  description: is there a declaration and no manifests present?
+  expression: contains(keys(@), "declaration") && !contains(keys(@), "manifest")
+  report_text:
+    "true":
+      en: No modifications took place after it was created
+    "false":
+      en: This media asset was modified after creation, but with full provenance
+
+---
+# Section 2 - GPS & Location information
+
+- id: location
+  description: Section 2 - GPS & Location information
+  title: Location Information
+  report_text: This section provides information about where the image was taken
+
+- # check the GPS location
+  id: gps
+  description: GPS location approximate to China's
+  expression: >
+    (manifests[0].assertions.'cawg.metadata'.'exif:GPSLatitude' > 20) && 
+      (manifests[0].assertions.'cawg.metadata'.'exif:GPSLatitude' < 50) && 
+      (manifests[0].assertions.'cawg.metadata'.'exif:GPSLongitude' > 80) && 
+      (manifests[0].assertions.'cawg.metadata'.'exif:GPSLongitude' < 120)
+  report_text:
+    "true":
+      en: The GPS information shows that the image was taken inside of China
+      fr: Translation in French
+      zh: Translation in Simplified Chinese
+    "false":
+      en: The GPS information shows that the image was taken outside of China
+
+- # check the human entered value for the city
+  id: city
+  description: name of the city contains "China"
+  expression: >
+    contains(manifests[0].assertions.'cawg.metadata'
+                                    .'Iptc4xmpExt:LocationCreated'
+                                    .'Iptc4xmpExt:City'
+            , "China")
+  report_text:
+    "true":
+      en: The city is in China
+      fr: Translation in French
+      zh: Translation in Simplified Chinese
+      jp: Translation in Japanese
+    "false":
+      en: The city is not in China

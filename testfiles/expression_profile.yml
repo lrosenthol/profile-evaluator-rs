@@ -1,0 +1,74 @@
+# Example Trust Profile for experimenting with expression registration
+---
+profile_metadata:
+  name: Experimental Expression Registration Profile
+  issuer: JPEG Trust Committee
+  date: 2025-06-26T21:00:46.638Z
+  version: 2.0.0
+  language: en
+
+expressions:
+  _isUnmodified: '@.declaration.''claim.v2''.content_status == "assertion.dataHash.match"'
+  _isAIGC: contains(@.declaration.assertions.'c2pa.actions'.actions[0].digitalSourceType, "trainedAlgorithmicMedia")
+  _dateOfWeek: "value($days, weekday(now(), 3))"
+
+variables:
+  "$days":
+    [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ]
+
+---
+# Section 0 - Output the metadata
+- block:
+    name: "profile_metadata"
+    value: |
+      {{ expr "@.profile_metadata" }}
+---
+# Section 1
+
+- id: generalInfo
+  description: Section 1 - General Information
+  title: General Information
+  report_text: Report run on {{expr "_dateOfWeek()"}}
+
+- # check for content modification
+  # description provides additional context that does not go into the report
+  id: content
+  description: content is unmodified
+  expression: _isUnmodified(@)
+  report_text:
+    "true":
+      en: This content has not been modified
+      es: Translation in Spanish
+      zh: Translation in Simplified Chinese
+    "false":
+      en: This content has been modified
+
+---
+# Section 2 - Is produced by Generative AI (AIGC)?
+
+- id: genAI
+  description: Section 2 - Is Generative AI?
+  title: Generative AI Usage
+  report_text: This section provides information about whether or not the media asset was produced by generative AI.
+
+- # Is Generative AI?
+  # Checks for 'trainedAlgorithmicMedia' which includes both regular and composited flavors.
+  id: aigc
+  description: Is AIGC?
+  expression: _isAIGC(@)
+  # expression: customFunc()
+  report_text:
+    "true":
+      en: This media asset was produced by generative AI
+      de: Translation in German
+      zh: Translation in Simplified Chinese
+    "false":
+      en: This media asset was not produced by generative AI

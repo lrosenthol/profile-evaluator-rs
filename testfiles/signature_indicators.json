@@ -1,0 +1,243 @@
+{
+  "@context": {
+    "@vocab": "https://jpeg.org/jpegtrust",
+    "extras": "https://jpeg.org/jpegtrust/extras"
+  },
+  "asset_info": {
+    "alg": "sha256",
+    "hash": "na6lb3F/uIdiAhZtZp4Oa2aNCj1UvcHVxx/p5ISE2AA="
+  },
+  "manifests": [
+    {
+      "label": "urn:c2pa:5d35a024-13dd-4f79-964c-6583d8d4e602",
+      "assertions": {
+        "c2pa.actions.v2": {
+          "actions": [
+            {
+              "action": "c2pa.created",
+              "parameters": {
+                "parameters": {
+                  "instanceID": "xmp:iid:e928fac1-8473-4c70-1982-369e91d4e58d"
+                }
+              },
+              "softwareAgent": {}
+            },
+            {
+              "action": "c2pa.converted",
+              "parameters": {
+                "parameters": {
+                  "instanceID": "xmp:iid:e928fac1-8473-4c70-1982-369e91d4e58d"
+                }
+              },
+              "softwareAgent": {}
+            }
+          ]
+        },
+        "c2pa.hash.data": {
+          "algorithm": "SHA-256",
+          "hash": "9fUwrqrdrC2TpLOez7YXLN6XcnC1gpfZM/u1FZTIaxI=",
+          "exclusions": [
+            {
+              "start": 2,
+              "length": 7728
+            }
+          ],
+          "paddingLength": 4,
+          "padding2Length": 0
+        }
+      },
+      "claim.v2": {
+        "dc:title": "MIPAMS test image",
+        "instanceID": "uuid:7b57930e-2f23-47fc-affe-0400d70b738d",
+        "claim_generator": "MIPAMS GENERATOR 0.1",
+        "alg": "SHA-256",
+        "signature": "self#jumbf=c2pa.signature",
+        "created_assertions": [
+          {
+            "url": "self#jumbf=c2pa.assertions/c2pa.actions.v2",
+            "hash": "APqpWkPm91k98DD03sIQ+uYGspG+bxdy0c7+FMu8puU="
+          },
+          {
+            "url": "self#jumbf=c2pa.assertions/c2pa.hash.data",
+            "hash": "A8wNdhjiIyOOkGg8+GkJRSYJALG6orPQJRQKMFtq/rc="
+          }
+        ],
+        "gathered_assertions": [],
+        "redacted_assertions": []
+      },
+      "claim_signature": {
+        "algorithm": "ES256",
+        "serial_number": "7024e6247605f1d65f1b477551d4fafcb5ed91e6",
+        "issuer": {
+          "C": "US",
+          "ST": "CA",
+          "L": "Somewhere",
+          "O": "C2PA Test Intermediate Root CA",
+          "OU": "FOR TESTING_ONLY",
+          "CN": "Intermediate CA"
+        },
+        "subject": {
+          "C": "US",
+          "ST": "CA",
+          "L": "Somewhere",
+          "O": "C2PA Test Signing Cert",
+          "OU": "FOR TESTING_ONLY",
+          "CN": "C2PA Signer"
+        },
+        "validity": {
+          "not_before": "2022-06-10T18:46:40.000Z",
+          "not_after": "2030-08-26T18:46:40.000Z"
+        }
+      },
+      "status": {
+        "signature": "claimSignature.validated",
+        "assertion": {
+          "c2pa.actions.v2": "assertion.hashedURI.match",
+          "c2pa.hash.data": "assertion.dataHash.match"
+        },
+        "content": "assertion.dataHash.match",
+        "trust": "signingCredential.trusted"
+      }
+    }
+  ],
+  "content": {
+    "imageWidth": 3264,
+    "imageHeight": 270,
+    "fileType": "jpeg"
+  },
+  "metadata": {
+    "bitsPerSample": 8,
+    "colorComponents": 3,
+    "JFIFVersion": 257,
+    "resolutionUnit": 2,
+    "xResolution": [
+      72,
+      1
+    ],
+    "yResolution": [
+      72,
+      1
+    ],
+    "JFIFThumbnailWidth": 0,
+    "JFIFThumbnailHeight": 0,
+    "imageLength": 1836,
+    "make": [
+      "samsung"
+    ],
+    "model": [
+      "SM-J320F"
+    ],
+    "orientation": 6,
+    "software": [
+      "J320FXXU0AQL1"
+    ],
+    "dateTime": [
+      "2018:07:06 13:55:22"
+    ],
+    "yCbCrPositioning": 1,
+    "exifIFDPointer": 226,
+    "exposureTime": [
+      509,
+      999676
+    ],
+    "fNumber": [
+      22,
+      10
+    ],
+    "exposureProgram": 2,
+    "iSOSpeedRatings": 64,
+    "exifVersion": [
+      48,
+      50,
+      50,
+      48
+    ],
+    "dateTimeOriginal": [
+      "2018:07:06 13:55:22"
+    ],
+    "dateTimeDigitized": [
+      "2018:07:06 13:55:22"
+    ],
+    "componentsConfiguration": [
+      1,
+      2,
+      3,
+      0
+    ],
+    "apertureValue": [
+      230,
+      100
+    ],
+    "brightnessValue": [
+      0,
+      0
+    ],
+    "exposureBiasValue": [
+      0,
+      10
+    ],
+    "maxApertureValue": [
+      230,
+      100
+    ],
+    "meteringMode": 2,
+    "lightSource": 0,
+    "flash": 0,
+    "focalLength": [
+      3300,
+      1000
+    ],
+    "subSecTime": [
+      "10"
+    ],
+    "subSecTimeOriginal": [
+      "100"
+    ],
+    "subSecTimeDigitized": [
+      "20"
+    ],
+    "colorSpace": 1,
+    "pixelXDimension": 3264,
+    "pixelYDimension": 1836,
+    "exposureMode": 0,
+    "whiteBalance": 0,
+    "sceneCaptureType": 0,
+    "contrast": 0,
+    "saturation": 0,
+    "imageUniqueID": [
+      "IMAGE 2018:07:06 13:55:22"
+    ]
+  },
+  "extras:validation_status": {
+    "isValid": true,
+    "error": null,
+    "validationErrors": [],
+    "entries": [
+      {
+        "code": "signingCredential.trusted",
+        "url": "self#jumbf=/c2pa/urn:c2pa:5d35a024-13dd-4f79-964c-6583d8d4e602/c2pa.signature",
+        "severity": "info"
+      },
+      {
+        "code": "claimSignature.validated",
+        "url": "self#jumbf=/c2pa/urn:c2pa:5d35a024-13dd-4f79-964c-6583d8d4e602/c2pa.signature",
+        "severity": "info"
+      },
+      {
+        "code": "assertion.hashedURI.match",
+        "url": "self#jumbf=c2pa.assertions/c2pa.actions.v2",
+        "severity": "info"
+      },
+      {
+        "code": "assertion.hashedURI.match",
+        "url": "self#jumbf=c2pa.assertions/c2pa.hash.data",
+        "severity": "info"
+      },
+      {
+        "code": "assertion.dataHash.match",
+        "url": "self#jumbf=/c2pa/urn:c2pa:5d35a024-13dd-4f79-964c-6583d8d4e602/c2pa.assertions/c2pa.hash.data",
+        "severity": "info"
+      }
+    ]
+  }
+}

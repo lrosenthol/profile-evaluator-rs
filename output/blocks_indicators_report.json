@@ -1,0 +1,76 @@
+{
+  "profile_metadata": {
+    "name": "Testing Profile",
+    "issuer": "JPEG Trust Committee",
+    "date": "2025-06-17T22:44:49.717Z",
+    "version": "2.0.0",
+    "language": "en"
+  },
+  "test_map": {
+    "alg": "sha256",
+    "hash": "na6lb3F/uIdiAhZtZp4Oa2aNCj1UvcHVxx/p5ISE2AA=",
+    "noTemplate": true
+  },
+  "test_array": [
+    "sha256",
+    "na6lb3F/uIdiAhZtZp4Oa2aNCj1UvcHVxx/p5ISE2AA=",
+    123456
+  ],
+  "test_scaler": 4,
+  "test_array_return": [
+    {
+      "length": 7520,
+      "start": 2
+    }
+  ],
+  "test_map_return": {
+    "c2pa.hash.data": "assertion.hashedURI.match",
+    "c2pa.actions.v2": "assertion.hashedURI.match"
+  },
+  "test_expression": 25,
+  "asset_info": {
+    "alg": "sha256",
+    "hash": "na6lb3F/uIdiAhZtZp4Oa2aNCj1UvcHVxx/p5ISE2AA=",
+    "myNumber": 100
+  },
+  "asset_info_2": {
+    "alg": "sha256",
+    "hash": "na6lb3F/uIdiAhZtZp4Oa2aNCj1UvcHVxx/p5ISE2AA=",
+    "myNumber": 100
+  },
+  "myExample": {
+    "description": "This is a test example",
+    "myDate": "2025-06-17T22:44:49.717Z",
+    "myNumber": 25
+  },
+  "statements": [
+    [
+      {
+        "id": "non-scalers",
+        "report_text": "Object - {\"alg\":\"sha256\",\"hash\":\"na6lb3F/uIdiAhZtZp4Oa2aNCj1UvcHVxx/p5ISE2AA=\"}"
+      },
+      {
+        "id": "non-scalers",
+        "report_text": "Array - [{\"length\":7520,\"start\":2}]"
+      },
+      {
+        "id": "missing helper",
+        "report_text": "Foo - '🔴 Missing: foo()'"
+      },
+      {
+        "id": "test_expression",
+        "value": 25
+      }
+    ],
+    [
+      {
+        "id": "test_conditional_expression",
+        "report_text": "Status -  Match"
+      },
+      {
+        "id": "reputation",
+        "report_text": "Reputation - good"
+      }
+    ]
+  ]
+}

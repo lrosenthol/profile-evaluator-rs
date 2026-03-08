@@ -1,0 +1,25 @@
+---
+profile_metadata:
+  didThisWork: true
+  aNumber: 12345
+
+"foo:sample":
+  description: This is a sample camera profile for testing purposes
+  number: 1234567890
+
+expressions:
+  _isUnmodified: '@.declaration.''claim.v2''.content_status == "assertion.dataHash.match"'
+
+---
+- # check for content modification
+  # description provides additional context that does not go into the report
+  id: content
+  description: content is unmodified
+  expression: _isUnmodified(@)
+  report_text:
+    "true":
+      en: This content has not been modified
+      es: Translation in Spanish
+      zh: Translation in Simplified Chinese
+    "false":
+      en: This content has been modified

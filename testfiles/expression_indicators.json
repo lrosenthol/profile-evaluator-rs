@@ -1,0 +1,55 @@
+{
+  "@context": [
+    "https://jpeg.org/jpegtrust/"
+  ],
+  "declaration": {
+    "claim.v2": {
+      "alg": "sha256",
+      "claim_generator": "Joe's Photo Editor/2.0 (Windows 10)",
+      "claim_generator_info": [
+        {
+          "name": "Joe's Photo Editor",
+          "version": "2.0",
+          "schema.org.SoftwareApplication.operatingSystem": "Windows 10"
+        }
+      ],
+      "signature": "self#jumbf=c2pa/urn:c2pa:5560f310-addc-4823-bce7-619e070fafa9/c2pa.signature",
+      "dc:format": "image/png",
+      "signature_status": "claimSignature.validated",
+      "assertion_status": {
+        "c2pa.hash.data": "assertion.hashedURI.match",
+        "c2pa.actions.v2": "assertion.hashedURI.match"
+      },
+      "content_status": "assertion.dataHash.match"
+    },
+    "assertions": {
+      "c2pa.hash.data": {
+        "alg": "sha256",
+        "pad": "",
+        "hash": "Auxjtmax46cC2N3Y9aFmBO9Jfay8LEwJWzBUtZ0sUM8gA=",
+        "name": "JUMBF manifest",
+        "exclusions": [
+          {
+            "start": 9960,
+            "length": 4213
+          }
+        ]
+      },
+      "c2pa.actions.v2": {
+        "actions": [
+          {
+            "action": "c2pa.created",
+            "when": "2023-02-11T09:00:00Z",
+            "softwareAgent": {
+              "name": "Joe's Photo Editor",
+              "version": "2.0",
+              "schema.org.SoftwareApplication.operatingSystem": "Windows 10"
+            },
+            "digitalSourceType": "http://cv.iptc.org/newscodes/digitalsourcetype/trainedAlgorithmicMedia"
+          }
+        ]
+      }
+    }
+  },
+  "content": {}
+}

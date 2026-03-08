@@ -1,0 +1,33 @@
+{
+  "profile_metadata": {
+    "name": "Testing Profile",
+    "issuer": "JPEG Trust Committee",
+    "date": "2025-06-17T22:44:49.717Z",
+    "version": "2.0.0",
+    "language": "en",
+    "didThisWork": true,
+    "aNumber": 12345
+  },
+  "statements": [
+    [
+      {
+        "id": "generalInfo",
+        "title": "General Information",
+        "report_text": "This section provides information about general stuff"
+      }
+    ],
+    [
+      {
+        "id": "metadata-output",
+        "report_text": "This is a sample camera profile for testing purposes - 1234567890"
+      }
+    ],
+    [
+      {
+        "id": "content",
+        "value": true,
+        "report_text": "This content has not been modified"
+      }
+    ]
+  ]
+}
