@@ -7,7 +7,7 @@ profile_metadata:
 statements:
   - - id: generalInfo
       title: General Information
-      report_text: Report run on Thursday
+      report_text: Report run on Sunday
     - id: content
       value: true
       report_text: This content has not been modified

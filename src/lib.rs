@@ -224,6 +224,12 @@ pub fn evaluate(profile: &CompiledProfile, indicators: &Value) -> Result<Value, 
         hb,
     };
 
+    for (name, body) in &state.expressions {
+        state.jf.register_expression(name, body).map_err(|e| {
+            EvaluatorError::InvalidProfile(format!("invalid expression \"{}\": {}", name, e))
+        })?;
+    }
+
     let resolved_info = state.render_value(&profile.info);
     if let Some(ctx) = state.context.as_object_mut() {
         ctx.extend(resolved_info.as_object().cloned().unwrap_or_default());
@@ -318,6 +324,12 @@ struct EvalState {
 }
 
 impl EvalState {
+    /// Evaluates a JSON Formula expression string against the current context and globals.
+    ///
+    /// For no-arg custom functions (`_Name()`), chooses the evaluation context: if the
+    /// function body contains `$`, the full context is used; otherwise only `profile` is
+    /// used so formulas can reference profile fields directly. Panics during evaluation
+    /// are caught and yield `false`; formula errors yield `Null`.
     fn eval_expression(&mut self, expr: &str) -> Value {
         let no_arg_global = Regex::new(r"^\s*(_[A-Za-z0-9_]+)\(\)\s*$").expect("valid regex");
         let eval_context = if let Some(caps) = no_arg_global.captures(expr) {
@@ -335,10 +347,9 @@ impl EvalState {
             &self.context
         };
 
-        let expanded = self.expand_expression(expr);
         match catch_unwind(AssertUnwindSafe(|| {
             self.jf
-                .search(&expanded, eval_context, Some(&self.globals), Some("en-US"))
+                .search(expr, eval_context, Some(&self.globals), Some("en-US"))
         })) {
             Ok(Ok(v)) => v,
             Ok(Err(_)) => Value::Null,
@@ -346,46 +357,10 @@ impl EvalState {
         }
     }
 
-    fn expand_expression(&self, expr: &str) -> String {
-        let mut out = expr.to_string();
-        let re = Regex::new(r"(_[A-Za-z0-9_]+)\(([^()]*)\)").expect("valid regex");
-
-        for _ in 0..8 {
-            let mut changed = false;
-            let replaced = re
-                .replace_all(&out, |caps: &regex::Captures| {
-                    let name = caps.get(1).map(|m| m.as_str()).unwrap_or_default();
-                    let args = caps.get(2).map(|m| m.as_str().trim()).unwrap_or_default();
-                    if let Some(body) = self.expressions.get(name) {
-                        changed = true;
-                        if args.is_empty() || args == "@" {
-                            format!("({body})")
-                        } else {
-                            format!("({})", body.replace('@', args))
-                        }
-                    } else {
-                        caps.get(0).map(|m| m.as_str()).unwrap_or_default().to_string()
-                    }
-                })
-                .to_string();
-            out = replaced;
-            if !changed {
-                break;
-            }
-        }
-
-        if let Some(date) = self
-            .context
-            .get("profile_metadata")
-            .and_then(|v| v.get("date"))
-            .and_then(Value::as_str)
-        {
-            out = out.replace("now()", &format!("toDate(\"{date}\")"));
-        }
-
-        out
-    }
-
+    /// Recursively renders a value for report output. Strings are processed by
+    /// `render_string_value` (Handlebars plus `{{ expr "..." }}` evaluation); arrays
+    /// and objects are traversed so each element/field is rendered; other types are
+    /// returned unchanged.
     fn render_value(&mut self, value: &Value) -> Value {
         match value {
             Value::String(s) => self.render_string_value(s),
@@ -401,6 +376,10 @@ impl EvalState {
         }
     }
 
+    /// Renders a single string: evaluates full-string `{{ expr "..." }}` as an expression
+    /// (returning the result as-is), then replaces any inline `{{ expr "..." }}` segments
+    /// with their evaluated string form, and finally runs the result through Handlebars
+    /// with the current context. On Handlebars failure, falls back to `fallback_render`.
     fn render_string_value(&mut self, input: &str) -> Value {
         let full_expr_re =
             Regex::new(r#"(?s)^\s*\{\{\s*expr\s+"(.+?)"\s*\}\}\s*$"#).expect("valid regex");
@@ -426,6 +405,10 @@ impl EvalState {
         }
     }
 
+    /// Simple template fallback when Handlebars rendering fails. Replaces `{{ path }}`
+    /// tokens by looking up the dot-separated path in the context; missing keys are
+    /// shown as `🔴 Missing: path()`. Leaves `{{ expr "..." }}` blocks unchanged so
+    /// they can be handled elsewhere or surface as raw text.
     fn fallback_render(&mut self, input: &str) -> String {
         let token_re = Regex::new(r"\{\{\s*([^{}]+?)\s*\}\}").expect("valid regex");
         token_re
