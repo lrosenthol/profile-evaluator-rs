@@ -1,0 +1,15 @@
+[package]
+name = "profile-evaluator-gui"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+profile_evaluator_rs = { path = ".." }
+rfd = "0.15.2"
+serde = { version = "1.0.218", features = ["derive"] }
+serde_json = { version = "1.0.140", features = ["preserve_order"] }
+tauri = { version = "2", features = [] }

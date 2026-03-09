@@ -12,8 +12,8 @@ governing permissions and limitations under the License.
 
 use std::collections::{BTreeMap, HashSet};
 use std::fs;
-use std::path::{Path, PathBuf};
 use std::panic::{AssertUnwindSafe, catch_unwind};
+use std::path::{Path, PathBuf};
 
 use handlebars::{Handlebars, no_escape};
 use json_formula_rs::JsonFormula;
@@ -78,7 +78,10 @@ pub fn load_profile(path: impl AsRef<Path>) -> Result<CompiledProfile, Evaluator
     load_profile_internal(path.as_ref(), &mut visiting)
 }
 
-fn load_profile_internal(path: &Path, visiting: &mut HashSet<PathBuf>) -> Result<CompiledProfile, EvaluatorError> {
+fn load_profile_internal(
+    path: &Path,
+    visiting: &mut HashSet<PathBuf>,
+) -> Result<CompiledProfile, EvaluatorError> {
     let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
     if !visiting.insert(canonical.clone()) {
         return Err(EvaluatorError::InvalidProfile(format!(
@@ -178,9 +181,9 @@ fn parse_section(doc: Value) -> Result<Vec<ProfileItem>, EvaluatorError> {
 
     let mut out = Vec::new();
     for item in items {
-        let map = item
-            .as_object()
-            .ok_or_else(|| EvaluatorError::InvalidProfile("section item must be a mapping".to_string()))?;
+        let map = item.as_object().ok_or_else(|| {
+            EvaluatorError::InvalidProfile("section item must be a mapping".to_string())
+        })?;
 
         if map.contains_key("block") {
             let wrapper: BlockWrapper = serde_json::from_value(item.clone())?;
@@ -258,7 +261,11 @@ pub fn evaluate(profile: &CompiledProfile, indicators: &Value) -> Result<Value, 
                 ProfileItem::Block(block) => {
                     let rendered = state.render_value(&block.value);
                     report.insert(block.name.clone(), rendered.clone());
-                    if let Some(profile_obj) = state.context.get_mut("profile").and_then(Value::as_object_mut) {
+                    if let Some(profile_obj) = state
+                        .context
+                        .get_mut("profile")
+                        .and_then(Value::as_object_mut)
+                    {
                         profile_obj.insert(block.name.clone(), rendered);
                     }
                 }
@@ -281,15 +288,23 @@ pub fn evaluate(profile: &CompiledProfile, indicators: &Value) -> Result<Value, 
 
                     if let Some(value) = &expr_value {
                         out.insert("value".to_string(), value.clone());
-                        if let Some(profile_obj) = state.context.get_mut("profile").and_then(Value::as_object_mut) {
+                        if let Some(profile_obj) = state
+                            .context
+                            .get_mut("profile")
+                            .and_then(Value::as_object_mut)
+                        {
                             profile_obj.insert(statement.id.clone(), value.clone());
                         }
                     }
 
-                    let include_report_text = statement.expression.is_none() || statement.report_text.is_object();
+                    let include_report_text =
+                        statement.expression.is_none() || statement.report_text.is_object();
                     if include_report_text {
-                        let report_text_source =
-                            select_text_value(&statement.report_text, expr_value.as_ref(), &state.language);
+                        let report_text_source = select_text_value(
+                            &statement.report_text,
+                            expr_value.as_ref(),
+                            &state.language,
+                        );
                         let rendered_text = state.render_value(&report_text_source);
                         if let Some(s) = rendered_text.as_str() {
                             out.insert("report_text".to_string(), Value::String(s.to_string()));
@@ -313,9 +328,77 @@ pub fn evaluate(profile: &CompiledProfile, indicators: &Value) -> Result<Value, 
     Ok(Value::Object(report))
 }
 
-pub fn evaluate_files(profile_path: impl AsRef<Path>, indicators_path: impl AsRef<Path>) -> Result<Value, EvaluatorError> {
+pub fn evaluate_files(
+    profile_path: impl AsRef<Path>,
+    indicators_path: impl AsRef<Path>,
+) -> Result<Value, EvaluatorError> {
     let profile = load_profile(profile_path)?;
     let indicators: Value = serde_json::from_str(&fs::read_to_string(indicators_path)?)?;
+    evaluate(&profile, &indicators)
+}
+
+pub fn load_profile_from_yaml_str(
+    yaml_text: &str,
+    include_base_dir: Option<&Path>,
+) -> Result<CompiledProfile, EvaluatorError> {
+    let docs: Vec<Value> = serde_yaml::Deserializer::from_str(yaml_text)
+        .map(Value::deserialize)
+        .collect::<Result<Vec<_>, _>>()?;
+
+    if docs.is_empty() {
+        return Err(EvaluatorError::InvalidProfile(
+            "profile has no YAML documents".to_string(),
+        ));
+    }
+
+    let mut info = docs[0].clone();
+    if !info.is_object() {
+        return Err(EvaluatorError::InvalidProfile(
+            "first profile document must be a mapping".to_string(),
+        ));
+    }
+
+    let include_list = extract_include_list(&mut info)?;
+    let mut visiting = HashSet::new();
+    let mut included_info = Value::Object(Map::new());
+    let mut included_sections = Vec::new();
+
+    for include in include_list {
+        let include_path = if Path::new(&include).is_absolute() {
+            PathBuf::from(&include)
+        } else if let Some(base) = include_base_dir {
+            base.join(&include)
+        } else {
+            PathBuf::from(&include)
+        };
+
+        let included = load_profile_internal(&include_path, &mut visiting)?;
+        deep_merge(&mut included_info, included.info);
+        included_sections.extend(included.sections);
+    }
+
+    let mut current_sections = Vec::new();
+    for doc in docs.into_iter().skip(1) {
+        let section = parse_section(doc)?;
+        current_sections.push(section);
+    }
+
+    deep_merge(&mut included_info, info);
+    current_sections.extend(included_sections);
+
+    Ok(CompiledProfile {
+        info: included_info,
+        sections: current_sections,
+    })
+}
+
+pub fn evaluate_texts(
+    profile_yaml: &str,
+    indicators_json: &str,
+    include_base_dir: Option<&Path>,
+) -> Result<Value, EvaluatorError> {
+    let profile = load_profile_from_yaml_str(profile_yaml, include_base_dir)?;
+    let indicators: Value = serde_json::from_str(indicators_json)?;
     evaluate(&profile, &indicators)
 }
 
@@ -507,7 +590,8 @@ fn ensure_profile_object(context: &mut Value) {
         *context = json!({});
     }
     if let Some(obj) = context.as_object_mut() {
-        obj.entry("profile").or_insert_with(|| Value::Object(Map::new()));
+        obj.entry("profile")
+            .or_insert_with(|| Value::Object(Map::new()));
     }
 }
 
@@ -574,6 +658,9 @@ mod tests {
         let src = json!({"a": {"y": 3, "z": 4}, "b": {"nested": true}});
 
         deep_merge(&mut dst, src);
-        assert_eq!(dst, json!({"a": {"x": 1, "y": 3, "z": 4}, "b": {"nested": true}}));
+        assert_eq!(
+            dst,
+            json!({"a": {"x": 1, "y": 3, "z": 4}, "b": {"nested": true}})
+        );
     }
 }

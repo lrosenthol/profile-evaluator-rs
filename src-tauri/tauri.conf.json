@@ -1,0 +1,25 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Profile Evaluator",
+  "version": "0.1.0",
+  "identifier": "com.adobe.profile-evaluator",
+  "build": {
+    "frontendDist": "../ui"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Profile Evaluator",
+        "width": 1200,
+        "height": 850,
+        "minWidth": 900,
+        "minHeight": 700,
+        "resizable": true
+      }
+    ]
+  },
+  "bundle": {
+    "active": false
+  }
+}

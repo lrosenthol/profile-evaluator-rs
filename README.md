@@ -43,6 +43,20 @@ Run tests (expects `testfiles/` and `output/` with sample profiles and expected 
 cargo test
 ```
 
+## GUI (Tauri)
+
+This repository now includes a Tauri desktop app at `src-tauri/` with:
+- editable source JSON field and `Select File...` loader
+- editable YAML profile field and `Select File...` loader
+- `Evaluate Profile` button that runs the Rust evaluator library
+- scrollable JSON result panel with syntax highlighting and collapsible hierarchy
+
+Run it with:
+
+```bash
+cargo run --manifest-path src-tauri/Cargo.toml
+```
+
 ## License
 
 See repository for license information.

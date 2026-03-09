@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile Evaluator</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="title-row">
+        <h1>Profile Evaluator</h1>
+        <button id="evaluate-button" type="button">Evaluate Profile</button>
+      </header>
+
+      <section class="inputs-row">
+        <article class="panel">
+          <div class="panel-header">
+            <h2>Source JSON</h2>
+            <button id="select-json" type="button">Select File...</button>
+          </div>
+          <textarea id="source-json" spellcheck="false" aria-label="Source JSON"></textarea>
+          <div class="selected-path" id="selected-json-path">No file selected</div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <h2>YAML Profile</h2>
+            <button id="select-yaml" type="button">Select File...</button>
+          </div>
+          <textarea id="profile-yaml" spellcheck="false" aria-label="YAML Profile"></textarea>
+          <div class="selected-path" id="selected-yaml-path">No file selected</div>
+        </article>
+      </section>
+      <div
+        id="vertical-resizer"
+        class="vertical-resizer"
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize panels"
+      ></div>
+
+      <section class="panel output-panel">
+        <div class="panel-header">
+          <h2>Evaluation Result</h2>
+          <div id="status" class="status"></div>
+        </div>
+        <div class="output-tabs" role="tablist" aria-label="Result views">
+          <button id="tab-visual" class="tab-button active" type="button" role="tab" aria-selected="true">
+            Visual
+          </button>
+          <button id="tab-json" class="tab-button" type="button" role="tab" aria-selected="false">
+            JSON
+          </button>
+          <button id="tab-raw-json" class="tab-button" type="button" role="tab" aria-selected="false">
+            Raw JSON
+          </button>
+        </div>
+        <div id="visual-view" class="result-view visual-view active" aria-label="Visual evaluation result"></div>
+        <div id="json-tree" class="result-view json-tree" aria-label="JSON tree evaluation result"></div>
+        <pre id="raw-json-view" class="result-view raw-json" aria-label="Raw JSON evaluation result"></pre>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
