@@ -32,13 +32,33 @@
           <div class="selected-path" id="selected-yaml-path">No file selected</div>
         </article>
       </section>
+      <div
+        id="vertical-resizer"
+        class="vertical-resizer"
+        role="separator"
+        aria-orientation="horizontal"
+        aria-label="Resize panels"
+      ></div>
 
       <section class="panel output-panel">
         <div class="panel-header">
-          <h2>Evaluation Result (JSON)</h2>
+          <h2>Evaluation Result</h2>
           <div id="status" class="status"></div>
         </div>
-        <div id="json-tree" class="json-tree" aria-label="Evaluation result"></div>
+        <div class="output-tabs" role="tablist" aria-label="Result views">
+          <button id="tab-visual" class="tab-button active" type="button" role="tab" aria-selected="true">
+            Visual
+          </button>
+          <button id="tab-json" class="tab-button" type="button" role="tab" aria-selected="false">
+            JSON
+          </button>
+          <button id="tab-raw-json" class="tab-button" type="button" role="tab" aria-selected="false">
+            Raw JSON
+          </button>
+        </div>
+        <div id="visual-view" class="result-view visual-view active" aria-label="Visual evaluation result"></div>
+        <div id="json-tree" class="result-view json-tree" aria-label="JSON tree evaluation result"></div>
+        <pre id="raw-json-view" class="result-view raw-json" aria-label="Raw JSON evaluation result"></pre>
       </section>
     </main>
 
