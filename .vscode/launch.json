@@ -1,0 +1,57 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug CLI",
+      "cargo": {
+        "args": ["build", "--bin=profile-evaluator"],
+        "filter": {
+          "name": "profile-evaluator",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug CLI (with sample files)",
+      "cargo": {
+        "args": ["build", "--bin=profile-evaluator"],
+        "filter": {
+          "name": "profile-evaluator",
+          "kind": "bin"
+        }
+      },
+      "args": [
+        "--profile", "testfiles/no_manifests_profile.yml",
+        "--indicators", "testfiles/no_manifests_indicators.json"
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Tests",
+      "cargo": {
+        "args": ["test", "--no-run", "--", "--test-threads=1"],
+        "filter": {
+          "kind": "bin"
+        }
+      },
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Run GUI (Tauri)",
+      "runtimeExecutable": "cargo",
+      "runtimeArgs": ["tauri", "dev"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal"
+    }
+  ]
+}

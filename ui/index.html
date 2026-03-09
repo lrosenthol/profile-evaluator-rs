@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile Evaluator</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="title-row">
+        <h1>Profile Evaluator</h1>
+        <button id="evaluate-button" type="button">Evaluate Profile</button>
+      </header>
+
+      <section class="inputs-row">
+        <article class="panel">
+          <div class="panel-header">
+            <h2>Source JSON</h2>
+            <button id="select-json" type="button">Select File...</button>
+          </div>
+          <textarea id="source-json" spellcheck="false" aria-label="Source JSON"></textarea>
+          <div class="selected-path" id="selected-json-path">No file selected</div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-header">
+            <h2>YAML Profile</h2>
+            <button id="select-yaml" type="button">Select File...</button>
+          </div>
+          <textarea id="profile-yaml" spellcheck="false" aria-label="YAML Profile"></textarea>
+          <div class="selected-path" id="selected-yaml-path">No file selected</div>
+        </article>
+      </section>
+
+      <section class="panel output-panel">
+        <div class="panel-header">
+          <h2>Evaluation Result (JSON)</h2>
+          <div id="status" class="status"></div>
+        </div>
+        <div id="json-tree" class="json-tree" aria-label="Evaluation result"></div>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

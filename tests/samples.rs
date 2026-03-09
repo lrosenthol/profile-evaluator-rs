@@ -33,7 +33,8 @@ fn run_case(name: &str) {
 
     let expected_yaml_path = format!("output/{}_indicators_report.yml", name);
     let expected_yaml_text = fs::read_to_string(&expected_yaml_path).expect("expected yaml file");
-    let expected_yaml_value: Value = serde_yaml::from_str(&expected_yaml_text).expect("expected yaml parse");
+    let expected_yaml_value: Value =
+        serde_yaml::from_str(&expected_yaml_text).expect("expected yaml parse");
 
     assert_eq!(
         actual_yaml_value, expected_yaml_value,
@@ -60,14 +61,18 @@ fn validates_all_sample_profiles() {
 
 #[test]
 fn cli_roundtrip_json_matches_expected_case() {
-    let report = evaluate_files("testfiles/no_manifests_profile.yml", "testfiles/no_manifests_indicators.json")
-        .expect("evaluation should succeed");
+    let report = evaluate_files(
+        "testfiles/no_manifests_profile.yml",
+        "testfiles/no_manifests_indicators.json",
+    )
+    .expect("evaluation should succeed");
     let rendered = serialize_report(&report, OutputFormat::Json).expect("json serialization");
     let rendered_value: Value = serde_json::from_str(&rendered).expect("valid json");
 
     let expected_path = Path::new("output/no_manifests_indicators_report.json");
-    let expected: Value = serde_json::from_str(&fs::read_to_string(expected_path).expect("read expected"))
-        .expect("parse expected json");
+    let expected: Value =
+        serde_json::from_str(&fs::read_to_string(expected_path).expect("read expected"))
+            .expect("parse expected json");
 
     assert_eq!(rendered_value, expected);
 }
