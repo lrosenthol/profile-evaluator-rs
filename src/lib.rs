@@ -478,11 +478,10 @@ impl EvalState {
     fn render_string_value(&mut self, input: &str) -> Value {
         let full_expr_re =
             Regex::new(r#"(?s)^\s*\{\{\s*expr\s+"(.+?)"\s*\}\}\s*$"#).expect("valid regex");
-        if let Some(caps) = full_expr_re.captures(input) {
-            if let Some(expr) = caps.get(1).map(|m| m.as_str()) {
+        if let Some(caps) = full_expr_re.captures(input)
+            && let Some(expr) = caps.get(1).map(|m| m.as_str()) {
                 return self.eval_expression(expr);
             }
-        }
 
         let mut rendered = input.to_string();
         let expr_re = Regex::new(r#"\{\{\s*expr\s+"(.+?)"\s*\}\}"#).expect("valid regex");
