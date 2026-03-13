@@ -10,7 +10,8 @@ profile_metadata:
 expressions:
   _isUnmodified: '@.declaration.''claim.v2''.content_status == "assertion.dataHash.match"'
   _isAIGC: contains(@.declaration.assertions.'c2pa.actions'.actions[0].digitalSourceType, "trainedAlgorithmicMedia")
-  _dateOfWeek: "value($days, weekday(now(), 3))"
+  # Fixed index so sample output is stable in tests (avoid weekday(now()) which varies by run date)
+  _dateOfWeek: "value($days, 0)"
 
 variables:
   "$days":
