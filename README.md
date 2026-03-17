@@ -12,6 +12,31 @@ This crate depends on a local `json-formula-rs` at `../json-formula-rs`. Clone o
 cargo build --release
 ```
 
+## WASM/Web App
+
+The same `ui/` app used by the Tauri shell can also run in a browser against a WASM build of the evaluator library.
+
+Build the browser bundle with:
+
+```bash
+./scripts/build-wasm.sh
+```
+
+That generates `ui/pkg/` using `wasm-pack` and the `wasm32-unknown-unknown` target.
+
+To run the web app, serve the `ui/` directory over HTTP and open `ui/index.html`. For example:
+
+```bash
+python3 -m http.server 8000 -d ui
+```
+
+Then open `http://127.0.0.1:8000`.
+
+Notes:
+- browser mode uses the same HTML/CSS/JS UI as Tauri
+- browser mode evaluates profiles fully in WASM
+- YAML `include:` paths are still supported in native/Tauri builds, but not in the browser build because the browser cannot read sibling files from a local path
+
 ## Usage
 
 ```bash
