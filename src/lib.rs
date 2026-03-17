@@ -451,7 +451,10 @@ pub fn evaluate_profile_wasm(
     indicators_json: &str,
 ) -> Result<JsValue, JsValue> {
     let report = evaluate_texts(profile_yaml, indicators_json, None).map_err(js_error)?;
-    serde_wasm_bindgen::to_value(&report).map_err(js_error)
+    // Return JSON string so the JS side gets a plain object via JSON.parse();
+    // serde_wasm_bindgen::to_value can produce Map instances, which break result.statements in the UI.
+    let json_string = serde_json::to_string(&report).map_err(js_error)?;
+    Ok(JsValue::from_str(&json_string))
 }
 
 struct EvalState {
@@ -706,5 +709,137 @@ mod tests {
             dst,
             json!({"a": {"x": 1, "y": 3, "z": 4}, "b": {"nested": true}})
         );
+    }
+}
+
+#[cfg(all(test, target_arch = "wasm32"))]
+mod wasm_tests {
+    use super::*;
+    use wasm_bindgen_test::*;
+
+    /// Minimal valid profile (no includes): one info doc + one section with one statement.
+    const MINIMAL_PROFILE: &str = r#"---
+profile_metadata:
+  name: WASM Test Profile
+  language: en
+---
+- id: wasm_test_statement
+  title: WASM test
+  report_text: Result from WASM
+"#;
+
+    /// Minimal valid indicators JSON (object with optional content).
+    const MINIMAL_INDICATORS: &str = r#"{"content":{}}"#;
+
+    #[wasm_bindgen_test]
+    fn evaluate_texts_returns_non_empty_report() {
+        let report = evaluate_texts(MINIMAL_PROFILE, MINIMAL_INDICATORS, None)
+            .expect("evaluate_texts should succeed");
+        let statements = report
+            .get("statements")
+            .and_then(|v| v.as_array())
+            .expect("report should have statements array");
+        assert!(!statements.is_empty(), "statements should not be empty");
+        assert!(
+            report.get("profile_metadata").is_some() || report.get("statements").is_some(),
+            "report should have profile_metadata or statements"
+        );
+    }
+
+    #[wasm_bindgen_test]
+    fn evaluate_texts_report_has_expected_structure() {
+        let report = evaluate_texts(MINIMAL_PROFILE, MINIMAL_INDICATORS, None)
+            .expect("evaluate_texts should succeed");
+        let top_level: Vec<&str> = report
+            .as_object()
+            .map(|m| m.keys().map(String::as_str).collect())
+            .unwrap_or_default();
+        assert!(
+            top_level.contains(&"statements"),
+            "report should contain 'statements' key, got: {:?}",
+            top_level
+        );
+        let first_section = report["statements"]
+            .as_array()
+            .and_then(|a| a.first())
+            .and_then(|v| v.as_array());
+        assert!(first_section.is_some(), "statements should be array of sections");
+        let first_stmt = first_section.and_then(|s| s.first()).and_then(|v| v.as_object());
+        assert!(first_stmt.is_some(), "first section should have statement objects");
+        let id = first_stmt
+            .and_then(|o| o.get("id"))
+            .and_then(|v| v.as_str());
+        assert_eq!(id, Some("wasm_test_statement"), "first statement id should match");
+    }
+
+    /// Exercises the same path the browser uses: evaluate_profile_wasm returns JSON string -> parse.
+    #[wasm_bindgen_test]
+    fn evaluate_profile_wasm_returns_serializable_report() {
+        let js_value = evaluate_profile_wasm(MINIMAL_PROFILE, MINIMAL_INDICATORS)
+            .expect("evaluate_profile_wasm should succeed");
+        let json_string = js_value
+            .as_string()
+            .expect("evaluate_profile_wasm returns a JSON string");
+        let report: Value = serde_json::from_str(&json_string).expect("JSON string should parse as report");
+        let statements = report
+            .get("statements")
+            .and_then(|v| v.as_array())
+            .expect("report should have statements array");
+        assert!(!statements.is_empty(), "statements should not be empty");
+    }
+
+    /// Real-world testfiles from testfiles/ and output/ (embedded at compile time).
+    /// Excludes "includes" because WASM build does not support YAML include:.
+    const REAL_WORLD_CASES: &[(&str, &str, &str, &str)] = &[
+        (
+            "blocks",
+            include_str!("../testfiles/blocks_profile.yml"),
+            include_str!("../testfiles/blocks_indicators.json"),
+            include_str!("../output/blocks_indicators_report.json"),
+        ),
+        (
+            "camera",
+            include_str!("../testfiles/camera_profile.yml"),
+            include_str!("../testfiles/camera_indicators.json"),
+            include_str!("../output/camera_indicators_report.json"),
+        ),
+        (
+            "expression",
+            include_str!("../testfiles/expression_profile.yml"),
+            include_str!("../testfiles/expression_indicators.json"),
+            include_str!("../output/expression_indicators_report.json"),
+        ),
+        (
+            "genai",
+            include_str!("../testfiles/genai_profile.yml"),
+            include_str!("../testfiles/genai_indicators.json"),
+            include_str!("../output/genai_indicators_report.json"),
+        ),
+        (
+            "no_manifests",
+            include_str!("../testfiles/no_manifests_profile.yml"),
+            include_str!("../testfiles/no_manifests_indicators.json"),
+            include_str!("../output/no_manifests_indicators_report.json"),
+        ),
+        (
+            "signature",
+            include_str!("../testfiles/signature_profile.yml"),
+            include_str!("../testfiles/signature_indicators.json"),
+            include_str!("../output/signature_indicators_report.json"),
+        ),
+    ];
+
+    #[wasm_bindgen_test]
+    fn real_world_testfiles_evaluate_and_match_expected() {
+        for (name, profile_yaml, indicators_json, expected_json) in REAL_WORLD_CASES {
+            let report = evaluate_texts(profile_yaml, indicators_json, None)
+                .unwrap_or_else(|e| panic!("case {name}: evaluate_texts failed: {e}"));
+            let expected: Value = serde_json::from_str(expected_json)
+                .unwrap_or_else(|e| panic!("case {name}: invalid expected JSON: {e}"));
+            assert_eq!(
+                report, expected,
+                "case {name}: report did not match expected output"
+            );
+        }
     }
 }

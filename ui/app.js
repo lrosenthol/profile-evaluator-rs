@@ -48,7 +48,8 @@ async function createRuntime() {
 
   try {
     const wasmModule = await import("./pkg/profile_evaluator_rs.js");
-    await wasmModule.default();
+    const wasmUrl = new URL("./pkg/profile_evaluator_rs_bg.wasm", import.meta.url);
+    await wasmModule.default(wasmUrl);
     setStatus("WASM runtime ready");
 
     return {
@@ -57,7 +58,8 @@ async function createRuntime() {
         return browserSelectFile(kind);
       },
       evaluateProfile({ sourceJson, profileYaml }) {
-        return wasmModule.evaluate_profile_wasm(profileYaml, sourceJson);
+        const jsonString = wasmModule.evaluate_profile_wasm(profileYaml, sourceJson);
+        return JSON.parse(jsonString);
       },
     };
   } catch (error) {

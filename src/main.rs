@@ -10,36 +10,37 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-use std::fs;
-use std::path::PathBuf;
-
-use clap::{Parser, ValueEnum};
-use profile_evaluator_rs::{OutputFormat, evaluate_files, serialize_report};
-
-#[derive(Debug, Parser)]
-#[command(name = "profile-evaluator")]
-#[command(about = "Evaluate an asset profile (YAML) against indicators JSON")]
-struct Cli {
-    #[arg(short, long)]
-    profile: PathBuf,
-
-    #[arg(short, long)]
-    indicators: PathBuf,
-
-    #[arg(short, long, value_enum, default_value_t = FormatArg::Json)]
-    format: FormatArg,
-
-    #[arg(short, long)]
-    output: Option<PathBuf>,
-}
-
-#[derive(Debug, Clone, Copy, ValueEnum)]
-enum FormatArg {
-    Json,
-    Yaml,
-}
-
+#[cfg(not(target_arch = "wasm32"))]
 fn main() {
+    use std::fs;
+    use std::path::PathBuf;
+
+    use clap::{Parser, ValueEnum};
+    use profile_evaluator_rs::{OutputFormat, evaluate_files, serialize_report};
+
+    #[derive(Debug, Parser)]
+    #[command(name = "profile-evaluator")]
+    #[command(about = "Evaluate an asset profile (YAML) against indicators JSON")]
+    struct Cli {
+        #[arg(short, long)]
+        profile: PathBuf,
+
+        #[arg(short, long)]
+        indicators: PathBuf,
+
+        #[arg(short, long, value_enum, default_value_t = FormatArg::Json)]
+        format: FormatArg,
+
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+    }
+
+    #[derive(Debug, Clone, Copy, ValueEnum)]
+    enum FormatArg {
+        Json,
+        Yaml,
+    }
+
     let cli = Cli::parse();
 
     let format = match cli.format {
@@ -64,4 +65,9 @@ fn main() {
         eprintln!("error: {err}");
         std::process::exit(1);
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn main() {
+    // Binary is not used when built for WASM; entry point is the library.
 }

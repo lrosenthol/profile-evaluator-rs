@@ -68,6 +68,20 @@ Run tests (expects `testfiles/` and `output/` with sample profiles and expected 
 cargo test
 ```
 
+### WASM tests
+
+The library includes tests that run in the WASM build to verify evaluation and the JS-facing export. Run them with [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/):
+
+```bash
+wasm-pack test --node
+```
+
+This compiles the crate for `wasm32-unknown-unknown` and runs the WASM tests in Node. To run only the library’s unit tests (and skip the binary/integration tests), use:
+
+```bash
+wasm-pack test --node -- --lib
+```
+
 ## GUI (Tauri)
 
 This repository now includes a Tauri desktop app at `src-tauri/` with:
