@@ -16,12 +16,90 @@ const selectJsonButton = document.getElementById("select-json");
 const selectYamlButton = document.getElementById("select-yaml");
 const selectedJsonPath = document.getElementById("selected-json-path");
 const selectedYamlPath = document.getElementById("selected-yaml-path");
+const jsonFileInput = document.getElementById("json-file-input");
+const yamlFileInput = document.getElementById("yaml-file-input");
 
 let yamlPath = null;
 
 function setStatus(message, isError = false) {
   status.textContent = message;
   status.classList.toggle("error", isError);
+}
+
+async function createRuntime() {
+  if (window.__TAURI__?.core?.invoke) {
+    return {
+      kind: "tauri",
+      selectFile(kind) {
+        return window.__TAURI__.core.invoke("select_and_load_file", { kind });
+      },
+      evaluateProfile({ sourceJson, profileYaml, profilePath }) {
+        return window.__TAURI__.core.invoke("evaluate_profile", {
+          sourceJson,
+          profileYaml,
+          profilePath,
+        });
+      },
+    };
+  }
+
+  setStatus("Loading WASM runtime...");
+  evaluateButton.disabled = true;
+
+  try {
+    const wasmModule = await import("./pkg/profile_evaluator_rs.js");
+    await wasmModule.default();
+    setStatus("WASM runtime ready");
+
+    return {
+      kind: "browser",
+      selectFile(kind) {
+        return browserSelectFile(kind);
+      },
+      evaluateProfile({ sourceJson, profileYaml }) {
+        return wasmModule.evaluate_profile_wasm(profileYaml, sourceJson);
+      },
+    };
+  } catch (error) {
+    const message =
+      "Failed to load the WASM bundle. Run `./scripts/build-wasm.sh` first and serve `ui/` over HTTP.";
+    setStatus(message, true);
+    throw new Error(`${message} ${String(error)}`);
+  } finally {
+    evaluateButton.disabled = false;
+  }
+}
+
+function browserSelectFile(kind) {
+  const input = kind === "json" ? jsonFileInput : yamlFileInput;
+  if (!input) {
+    return Promise.reject(new Error(`Missing file input for ${kind}`));
+  }
+
+  return new Promise((resolve, reject) => {
+    const handleChange = async () => {
+      input.removeEventListener("change", handleChange);
+      const [file] = Array.from(input.files || []);
+      input.value = "";
+
+      if (!file) {
+        resolve(null);
+        return;
+      }
+
+      try {
+        resolve({
+          path: file.name,
+          contents: await file.text(),
+        });
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    input.addEventListener("change", handleChange, { once: true });
+    input.click();
+  });
 }
 
 function createKeyLabel(key) {
@@ -405,13 +483,12 @@ function setupVerticalResizer() {
   });
 }
 
-async function selectFile(kind) {
-  return window.__TAURI__.core.invoke("select_and_load_file", { kind });
-}
+const runtimePromise = createRuntime();
 
 selectJsonButton.addEventListener("click", async () => {
   try {
-    const result = await selectFile("json");
+    const runtime = await runtimePromise;
+    const result = await runtime.selectFile("json");
     if (!result) {
       return;
     }
@@ -425,14 +502,19 @@ selectJsonButton.addEventListener("click", async () => {
 
 selectYamlButton.addEventListener("click", async () => {
   try {
-    const result = await selectFile("yaml");
+    const runtime = await runtimePromise;
+    const result = await runtime.selectFile("yaml");
     if (!result) {
       return;
     }
     profileYamlField.value = result.contents;
-    yamlPath = result.path;
+    yamlPath = runtime.kind === "tauri" ? result.path : null;
     selectedYamlPath.textContent = result.path;
-    setStatus("YAML file loaded");
+    if (runtime.kind === "browser") {
+      setStatus("YAML file loaded");
+    } else {
+      setStatus("YAML file loaded");
+    }
   } catch (error) {
     setStatus(`Failed to load YAML file: ${String(error)}`, true);
   }
@@ -448,10 +530,11 @@ evaluateButton.addEventListener("click", async () => {
   }
 
   try {
+    const runtime = await runtimePromise;
     evaluateButton.disabled = true;
     setStatus("Evaluating...");
 
-    const result = await window.__TAURI__.core.invoke("evaluate_profile", {
+    const result = await runtime.evaluateProfile({
       sourceJson,
       profileYaml,
       profilePath: yamlPath,

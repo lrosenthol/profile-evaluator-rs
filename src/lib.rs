@@ -11,9 +11,13 @@ governing permissions and limitations under the License.
 */
 
 use std::collections::{BTreeMap, HashSet};
-use std::fs;
 use std::panic::{AssertUnwindSafe, catch_unwind};
-use std::path::{Path, PathBuf};
+use std::path::Path;
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::fs;
+#[cfg(not(target_arch = "wasm32"))]
+use std::path::PathBuf;
 
 use handlebars::{Handlebars, no_escape};
 use json_formula_rs::JsonFormula;
@@ -21,6 +25,9 @@ use regex::Regex;
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
 use thiserror::Error;
+
+#[cfg(target_arch = "wasm32")]
+use wasm_bindgen::prelude::*;
 
 #[derive(Debug, Error)]
 pub enum EvaluatorError {
@@ -73,11 +80,13 @@ struct BlockWrapper {
     block: BlockEntry,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn load_profile(path: impl AsRef<Path>) -> Result<CompiledProfile, EvaluatorError> {
-    let mut visiting = HashSet::new();
+    let mut visiting: HashSet<PathBuf> = HashSet::new();
     load_profile_internal(path.as_ref(), &mut visiting)
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn load_profile_internal(
     path: &Path,
     visiting: &mut HashSet<PathBuf>,
@@ -328,6 +337,7 @@ pub fn evaluate(profile: &CompiledProfile, indicators: &Value) -> Result<Value, 
     Ok(Value::Object(report))
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn evaluate_files(
     profile_path: impl AsRef<Path>,
     indicators_path: impl AsRef<Path>,
@@ -359,11 +369,27 @@ pub fn load_profile_from_yaml_str(
     }
 
     let include_list = extract_include_list(&mut info)?;
-    let mut visiting = HashSet::new();
+    #[cfg(not(target_arch = "wasm32"))]
+    let mut visiting: HashSet<PathBuf> = HashSet::new();
+    #[cfg(target_arch = "wasm32")]
+    let mut visiting: HashSet<String> = HashSet::new();
     let mut included_info = Value::Object(Map::new());
+    #[cfg(not(target_arch = "wasm32"))]
     let mut included_sections = Vec::new();
+    #[cfg(target_arch = "wasm32")]
+    let included_sections = Vec::new();
 
     for include in include_list {
+        #[cfg(target_arch = "wasm32")]
+        {
+            let _ = include_base_dir;
+            let _ = &mut visiting;
+            return Err(EvaluatorError::InvalidProfile(format!(
+                "profile include is not supported in the WASM build: {include}"
+            )));
+        }
+
+        #[cfg(not(target_arch = "wasm32"))]
         let include_path = if Path::new(&include).is_absolute() {
             PathBuf::from(&include)
         } else if let Some(base) = include_base_dir {
@@ -372,9 +398,13 @@ pub fn load_profile_from_yaml_str(
             PathBuf::from(&include)
         };
 
+        #[cfg(not(target_arch = "wasm32"))]
         let included = load_profile_internal(&include_path, &mut visiting)?;
-        deep_merge(&mut included_info, included.info);
-        included_sections.extend(included.sections);
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            deep_merge(&mut included_info, included.info);
+            included_sections.extend(included.sections);
+        }
     }
 
     let mut current_sections = Vec::new();
@@ -407,6 +437,21 @@ pub fn serialize_report(report: &Value, format: OutputFormat) -> Result<String, 
         OutputFormat::Json => Ok(serde_json::to_string_pretty(report)?),
         OutputFormat::Yaml => Ok(serde_yaml::to_string(report)?),
     }
+}
+
+#[cfg(target_arch = "wasm32")]
+fn js_error(err: impl ToString) -> JsValue {
+    JsValue::from_str(&err.to_string())
+}
+
+#[cfg(target_arch = "wasm32")]
+#[wasm_bindgen]
+pub fn evaluate_profile_wasm(
+    profile_yaml: &str,
+    indicators_json: &str,
+) -> Result<JsValue, JsValue> {
+    let report = evaluate_texts(profile_yaml, indicators_json, None).map_err(js_error)?;
+    serde_wasm_bindgen::to_value(&report).map_err(js_error)
 }
 
 struct EvalState {
