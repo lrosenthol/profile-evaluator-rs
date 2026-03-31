@@ -1,0 +1,51 @@
+# Example Trust Profile for testing statement ordering
+---
+profile_metadata:
+  name: Experimental Statement Ordering Profile
+  issuer: Leonard
+  date: 2026-03-31T01:03:16.443Z
+  version: 2.0.0
+  language: en
+---
+# Section 0 - Output the metadata
+- block:
+    name: "profile_metadata"
+    value: |
+      {{ expr "@.profile_metadata" }}
+---
+# Good test cases
+
+- id: good_tests
+  description: Good tests
+  report_text: All of these tests should pass
+
+- id: good_test_1
+  description: Good test case 1
+  expression: length(items[*])
+  report_text:
+    "2":
+      en: 2 items
+
+- id: good_test_2
+  description: Good test case 2
+  expression: foo
+  report_text:
+    "null":
+      en: foo is not defined
+
+---
+# Bad test cases
+
+- id: bad_tests
+  description: Bad tests
+  report_text: All of these tests should fail
+
+- id: bad_test_1
+  description: Bad test case 1 - calls a function that does not exist
+  expression: nonexistent_function(@)
+  report_text: should not appear
+
+- id: bad_test_2
+  description: Bad test case 2 - single-quoted string vs JSON string
+  expression: address.state == 'CA'
+  report_text: should not appear

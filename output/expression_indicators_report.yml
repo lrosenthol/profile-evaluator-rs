@@ -17,4 +17,7 @@ statements:
         asset was produced by generative AI.
     - id: aigc
       value: false
+      debug:
+        - "Failed to find: 'c2pa.actions'"
+        - "Available fields: 'c2pa.hash.data', 'c2pa.actions.v2'"
       report_text: This media asset was not produced by generative AI

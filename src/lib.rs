@@ -20,7 +20,7 @@ use std::fs;
 use std::path::PathBuf;
 
 use handlebars::{Handlebars, no_escape};
-use json_formula_rs::JsonFormula;
+use json_formula_rs::{JsonFormula, JsonFormulaError};
 use regex::Regex;
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
@@ -290,24 +290,54 @@ pub fn evaluate(profile: &CompiledProfile, indicators: &Value) -> Result<Value, 
                         }
                     }
 
-                    let expr_value = statement
-                        .expression
-                        .as_ref()
-                        .map(|expr| state.eval_expression(expr));
-
-                    if let Some(value) = &expr_value {
-                        out.insert("value".to_string(), value.clone());
-                        if let Some(profile_obj) = state
-                            .context
-                            .get_mut("profile")
-                            .and_then(Value::as_object_mut)
-                        {
-                            profile_obj.insert(statement.id.clone(), value.clone());
+                    let (expr_result, expr_debug) = match statement.expression.as_ref() {
+                        Some(expr) => {
+                            let (r, d) = state.eval_expression(expr);
+                            (Some(r), d)
                         }
-                    }
+                        None => (None, vec![]),
+                    };
 
-                    let include_report_text =
-                        statement.expression.is_none() || statement.report_text.is_object();
+                    let expr_value: Option<Value> = match expr_result {
+                        Some(Ok(ref value)) => {
+                            out.insert("value".to_string(), value.clone());
+                            if let Some(profile_obj) = state
+                                .context
+                                .get_mut("profile")
+                                .and_then(Value::as_object_mut)
+                            {
+                                profile_obj.insert(statement.id.clone(), value.clone());
+                            }
+                            if !expr_debug.is_empty() {
+                                out.insert(
+                                    "debug".to_string(),
+                                    Value::Array(
+                                        expr_debug.iter().map(|s| Value::String(s.clone())).collect(),
+                                    ),
+                                );
+                            }
+                            Some(value.clone())
+                        }
+                        Some(Err(ref err_info)) => {
+                            let mut err_obj = err_info.clone();
+                            if !expr_debug.is_empty() {
+                                if let Some(obj) = err_obj.as_object_mut() {
+                                    obj.insert(
+                                        "debug".to_string(),
+                                        Value::Array(
+                                            expr_debug.iter().map(|s| Value::String(s.clone())).collect(),
+                                        ),
+                                    );
+                                }
+                            }
+                            out.insert("error".to_string(), err_obj);
+                            None
+                        }
+                        None => None,
+                    };
+
+                    let include_report_text = statement.expression.is_none()
+                        || (expr_value.is_some() && statement.report_text.is_object());
                     if include_report_text {
                         let report_text_source = select_text_value(
                             &statement.report_text,
@@ -471,9 +501,11 @@ impl EvalState {
     ///
     /// For no-arg custom functions (`_Name()`), chooses the evaluation context: if the
     /// function body contains `$`, the full context is used; otherwise only `profile` is
-    /// used so formulas can reference profile fields directly. Panics during evaluation
-    /// are caught and yield `false`; formula errors yield `Null`.
-    fn eval_expression(&mut self, expr: &str) -> Value {
+    /// used so formulas can reference profile fields directly. Returns `Ok(value)` on
+    /// success. Returns `Err(info)` on formula errors (with `kind` and `message` from the
+    /// library) or panics (with `kind: "Panic"`).
+    /// Returns `(Ok(value) | Err(error_json), debug_messages)`.
+    fn eval_expression(&mut self, expr: &str) -> (Result<Value, serde_json::Value>, Vec<String>) {
         let no_arg_global = Regex::new(r"^\s*(_[A-Za-z0-9_]+)\(\)\s*$").expect("valid regex");
         let eval_context = if let Some(caps) = no_arg_global.captures(expr) {
             let name = caps.get(1).map(|m| m.as_str()).unwrap_or_default();
@@ -490,14 +522,20 @@ impl EvalState {
             &self.context
         };
 
-        match catch_unwind(AssertUnwindSafe(|| {
+        // Drain any prior debug messages so we only capture those from this call.
+        self.jf.take_debug();
+
+        let result = match catch_unwind(AssertUnwindSafe(|| {
             self.jf
                 .search(expr, eval_context, Some(&self.globals), Some("en-US"))
         })) {
-            Ok(Ok(v)) => v,
-            Ok(Err(_)) => Value::Null,
-            Err(_) => Value::Bool(false),
-        }
+            Ok(Ok(v)) => Ok(v),
+            Ok(Err(e)) => Err(json_formula_error_to_json(&e)),
+            Err(_) => Err(json!({"kind": "Panic", "message": "panic during evaluation"})),
+        };
+
+        let debug = self.jf.take_debug();
+        (result, debug)
     }
 
     /// Recursively renders a value for report output. Strings are processed by
@@ -528,7 +566,10 @@ impl EvalState {
             Regex::new(r#"(?s)^\s*\{\{\s*expr\s+"(.+?)"\s*\}\}\s*$"#).expect("valid regex");
         if let Some(caps) = full_expr_re.captures(input)
             && let Some(expr) = caps.get(1).map(|m| m.as_str()) {
-                return self.eval_expression(expr);
+                return match self.eval_expression(expr).0 {
+                    Ok(v) => v,
+                    Err(e) => Value::String(format!("🔴 Error: {}", e)),
+                };
             }
 
         let mut rendered = input.to_string();
@@ -536,8 +577,10 @@ impl EvalState {
         rendered = expr_re
             .replace_all(&rendered, |caps: &regex::Captures| {
                 let expr = caps.get(1).map(|m| m.as_str()).unwrap_or_default();
-                let value = self.eval_expression(expr);
-                json_to_inline_string(&value)
+                match self.eval_expression(expr).0 {
+                    Ok(value) => json_to_inline_string(&value),
+                    Err(e) => format!("🔴 Error: {e}"),
+                }
             })
             .to_string();
 
@@ -620,6 +663,13 @@ fn lookup_path<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
         current = current.get(segment)?;
     }
     Some(current)
+}
+
+fn json_formula_error_to_json(e: &JsonFormulaError) -> serde_json::Value {
+    json!({
+        "kind": format!("{:?}", e.kind),
+        "message": e.message,
+    })
 }
 
 fn json_to_inline_string(value: &Value) -> String {

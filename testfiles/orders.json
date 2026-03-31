@@ -1,0 +1,22 @@
+{
+	"address": {
+		"street": "12 Oak St",
+		"city": "San Jose",
+		"state": "CA",
+		"country": "USA",
+		"phone": "1234561234"
+	},
+	"items": [
+		{
+			"desc": "pens",
+			"quantity": 2,
+			"price": 3.23
+		},
+		{
+			"desc": "pencils",
+			"quantity": 3,
+			"price": 1.34
+		}
+	],
+	"tax": 1.13
+}

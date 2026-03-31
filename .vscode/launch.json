@@ -35,6 +35,23 @@
     {
       "type": "lldb",
       "request": "launch",
+      "name": "Run Good/Bad Sample",
+      "cargo": {
+        "args": ["build", "--bin=profile-evaluator"],
+        "filter": {
+          "name": "profile-evaluator",
+          "kind": "bin"
+        }
+      },
+      "args": [
+        "--profile", "testfiles/order-tests.yml",
+        "--indicators", "testfiles/orders.json"
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
       "name": "Debug Tests",
       "cargo": {
         "args": ["test", "--no-run", "--", "--test-threads=1"],
